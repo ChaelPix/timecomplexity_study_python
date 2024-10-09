@@ -72,18 +72,62 @@ class SelectionSort(SortAlgorithm):
             operations += 3
         return data, operations
 
+# class HeapSort(SortAlgorithm):
+#     def __init__(self):
+#         super().__init__('Heap Sort')
+
+#     def sort(self, data):
+#         operations = 0
+#         heapq.heapify(data)
+#         operations += len(data)  # ~ du coût de heapify (O(n))
+        
+#         sorted_data = []
+#         while data:
+#             sorted_data.append(heapq.heappop(data))
+#             operations += 1  # `heappop`, ~1 pour l'extraction.
+#             operations += len(data).bit_length()  # Comparaisons dans `heappop` (O(log n))
+        
+#         return sorted_data, operations
 class HeapSort(SortAlgorithm):
     def __init__(self):
         super().__init__('Heap Sort')
 
-    def sort(self, data):
+    def heapify(self, data, n, i):
+        largest = i
+        left = 2 * i + 1
+        right = 2 * i + 2 
         operations = 0
-        heapq.heapify(data)
-        sorted_data = []
-        while data:
-            sorted_data.append(heapq.heappop(data))
-            operations += 1
-        return sorted_data, operations
+        
+        if left < n and data[left] > data[largest]:
+            largest = left
+            operations += 1  # comparaison
+
+        if right < n and data[right] > data[largest]:
+            largest = right
+            operations += 1 # comparaison 
+
+        if largest != i:
+            data[i], data[largest] = data[largest], data[i]
+            operations += 3   # 3 opérations pour l'échange
+
+            ops_from_recursive_call = self.heapify(data, n, largest)
+            operations += ops_from_recursive_call
+
+        return operations
+
+    def sort(self, data):
+        n = len(data)
+        operations = 0
+
+        for i in range(n // 2 - 1, -1, -1):
+            operations += self.heapify(data, n, i)
+
+        for i in range(n - 1, 0, -1):
+            data[i], data[0] = data[0], data[i]
+            operations += 3  # 3 opérations pour l'échange
+            operations += self.heapify(data, i, 0)
+
+        return data, operations
 
 class QuickSort(SortAlgorithm):
     def __init__(self):

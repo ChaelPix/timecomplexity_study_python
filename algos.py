@@ -42,14 +42,16 @@ class InsertionSort(SortAlgorithm):
         operations = 0
         for i in range(1, len(data)):
             key = data[i]
-            j = i-1
-            operations += 1
+            j = i - 1
+            operations += 1  # Initialisation de 'j'
             while j >= 0 and key < data[j]:
-                data[j+1] = data[j]
-                operations += 2
+                operations += 2  # 2 Comparaisons
+                data[j + 1] = data[j]
+                operations += 1  # Déplacement de data
                 j -= 1
-            data[j+1] = key
-            operations += 1
+                operations += 1  # Décrémentation de 'j'
+            data[j + 1] = key
+            operations += 1  # Insertion de 'key'
         return data, operations
 
 class SelectionSort(SortAlgorithm):

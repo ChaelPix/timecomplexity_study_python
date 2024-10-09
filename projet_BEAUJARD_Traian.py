@@ -260,8 +260,8 @@ class SortBenchmark:
             for algo in self.algorithms:
                 print(f"Exécution de {algo.name}")
                 (toplotRandom, toplotSorted, toplotInverted,
-                 operationsRandom, operationsSorted, operationsInverted,
-                 memoryRandom, memorySorted, memoryInverted) = self.execute_sort(algo)
+                operationsRandom, operationsSorted, operationsInverted,
+                memoryRandom, memorySorted, memoryInverted) = self.execute_sort(algo)
 
                 if 'random' in self.types_to_sort:
                     avg_times[algo.name]['random'].append(toplotRandom)
@@ -280,15 +280,16 @@ class SortBenchmark:
 
         for algo_name in avg_times.keys():
             for list_type in avg_times[algo_name].keys():
-                avg_times[algo_name][list_type] = np.mean(avg_times[algo_name][list_type], axis=0)
-                avg_operations[algo_name][list_type] = np.mean(avg_operations[algo_name][list_type], axis=0)
-                avg_memory[algo_name][list_type] = np.mean(avg_memory[algo_name][list_type], axis=0)
+                if avg_times[algo_name][list_type]:
+                    avg_times[algo_name][list_type] = np.mean(avg_times[algo_name][list_type], axis=0)
+                if avg_operations[algo_name][list_type]:
+                    avg_operations[algo_name][list_type] = np.mean(avg_operations[algo_name][list_type], axis=0)
+                if avg_memory[algo_name][list_type]:
+                    avg_memory[algo_name][list_type] = np.mean(avg_memory[algo_name][list_type], axis=0)
 
         self.plot_results(avg_times, "moyenne_comparaison_time.png", 'Temps d\'exécution (s)')
         self.plot_results(avg_operations, "moyenne_comparaison_complexity.png", 'Nombre d\'opérations')
         self.plot_results(avg_memory, "moyenne_comparaison_memory.png", 'Mémoire utilisée (octets)')
-
-
 
     def plot_results(self, avg_results, filename, ylabel):
         """
@@ -298,8 +299,9 @@ class SortBenchmark:
 
         for algo_name in avg_results.keys():
             for list_type in avg_results[algo_name].keys():
-                label = f'{algo_name} ({list_type.capitalize()})' 
-                plt.plot(self.axis, avg_results[algo_name][list_type], label=label)
+                if len(avg_results[algo_name][list_type]) > 0:
+                    label = f'{algo_name} ({list_type.capitalize()})'
+                    plt.plot(self.axis, avg_results[algo_name][list_type], label=label)
 
         plt.xlabel('Taille des tableaux')
         plt.ylabel(ylabel)
@@ -314,14 +316,12 @@ class SortBenchmark:
         plt.tight_layout()
 
         if self.show_plots:
-            plt.show()  # Affiche dans le notebook
+            plt.show()
         else:
             save_dir = os.path.join("benchmarks", self.savepath)
             os.makedirs(save_dir, exist_ok=True)
             plt.savefig(os.path.join(save_dir, filename))
         plt.close()
-
-
 
 
 

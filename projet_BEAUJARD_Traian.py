@@ -4,6 +4,7 @@ import random
 import time
 import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
+from sys import setrecursionlimit
 import heapq
 
 class SortAlgorithm(ABC):
@@ -28,11 +29,15 @@ class BubbleSort(SortAlgorithm):
         n = len(data)
         operations = 0
         for i in range(n):
+            swapped = False
             for j in range(0, n-i-1):
-                operations += 1
+                operations += 1  # La comparaison suivante est une opération.
                 if data[j] > data[j+1]:
                     data[j], data[j+1] = data[j+1], data[j]
-                    operations += 3
+                    operations += 3  # Interversion, 3 opérations avec variable intermédiaire.
+                    swapped = True
+            if not swapped:  # Si aucun échange n'a été fait, la liste est déjà triée.
+                break
         return data, operations
 
 class InsertionSort(SortAlgorithm):
@@ -129,7 +134,6 @@ class HeapSort(SortAlgorithm):
 
         return data, operations
     
-from sys import setrecursionlimit
 
 class QuickSort(SortAlgorithm):
     def __init__(self):
@@ -177,42 +181,72 @@ class QuickSort(SortAlgorithm):
         return data, operations
 
 
-
-
-
 class MergeSort(SortAlgorithm):
     def __init__(self):
         super().__init__('Merge Sort')
 
-    def sort(self, data):
+    def merge(self, arr, l, m, r):
         operations = 0
-        if len(data) <= 1:
-            return data, operations
+
+        n1 = m - l + 1
+        n2 = r - m
+        L = [0] * n1
+        R = [0] * n2
+        operations += 4
+
+        for i in range(0, n1):
+            L[i] = arr[l + i]
+            operations += 1  # copier dans L[]
+
+        for j in range(0, n2):
+            R[j] = arr[m + 1 + j]
+            operations += 1  # copier dans R[]
+
+        i = 0
+        j = 0 
+        k = l
         
-        def merge(left, right):
-            sorted_list = []
-            i = j = 0
-            operations = 0
-            while i < len(left) and j < len(right):
-                operations += 1
-                if left[i] < right[j]:
-                    sorted_list.append(left[i])
-                    i += 1
-                else:
-                    sorted_list.append(right[j])
-                    j += 1
-                operations += 1
-            sorted_list.extend(left[i:])
-            sorted_list.extend(right[j:])
-            operations += len(left[i:]) + len(right[j:])
-            return sorted_list, operations
-        
-        mid = len(data) // 2
-        left_sorted, left_operations = self.sort(data[:mid])
-        right_sorted, right_operations = self.sort(data[mid:])
-        merged_data, merge_operations = merge(left_sorted, right_sorted)
-        total_operations = left_operations + right_operations + merge_operations
-        return merged_data, total_operations
+        while i < n1 and j < n2:
+            operations += 2  # Comparaisons
+            if L[i] <= R[j]:
+                arr[k] = L[i]
+                i += 1
+            else:
+                arr[k] = R[j]
+                j += 1
+            k += 1
+            operations += 2
+
+        while i < n1:
+            arr[k] = L[i]
+            i += 1
+            k += 1
+            operations += 3
+
+        while j < n2:
+            arr[k] = R[j]
+            j += 1
+            k += 1
+            operations += 3
+
+        return operations
+
+    def merge_sort(self, arr, l, r):
+        operations = 0
+        if l < r:
+            m = l + (r - l) // 2
+
+            operations += self.merge_sort(arr, l, m)
+            operations += self.merge_sort(arr, m + 1, r)
+
+            operations += self.merge(arr, l, m, r)
+
+        return operations
+
+    def sort(self, data):
+        operations = self.merge_sort(data, 0, len(data) - 1)
+        return data, operations
+
 
 ############################################## benchmark.py
 import copy

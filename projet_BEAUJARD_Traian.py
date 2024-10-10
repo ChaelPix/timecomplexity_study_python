@@ -128,24 +128,57 @@ class HeapSort(SortAlgorithm):
             operations += self.heapify(data, i, 0)
 
         return data, operations
+    
+from sys import setrecursionlimit
 
 class QuickSort(SortAlgorithm):
     def __init__(self):
         super().__init__('Quick Sort')
 
-    def sort(self, data):
+    def swap(self, arr, i, j):
+        arr[i], arr[j] = arr[j], arr[i]
+
+    def partition(self, arr, low, high):
         operations = 0
-        if len(data) <= 1:
-            return data, operations
-        pivot = data[len(data) // 2]
-        left = [x for x in data if x < pivot]
-        middle = [x for x in data if x == pivot]
-        right = [x for x in data if x > pivot]
-        operations += len(data)
-        left_sorted, left_operations = self.sort(left)
-        right_sorted, right_operations = self.sort(right)
-        operations += left_operations + right_operations
-        return left_sorted + middle + right_sorted, operations
+
+        mid = (low + high) // 2
+        pivot = arr[mid]
+        self.swap(arr, mid, high)
+        operations += 3  # échange du pivot avec la fin
+        
+        i = low - 1
+        
+        for j in range(low, high):
+            operations += 1  # Comparaison
+            if arr[j] < pivot:
+                i += 1
+                self.swap(arr, i, j)
+                operations += 3  # Échange = 3 opérations
+        
+        self.swap(arr, i + 1, high)
+        operations += 3  # Échange du pivot
+        
+        return i + 1, operations
+
+    def quicksort(self, arr, low, high):
+        operations = 0
+        if low < high:
+            pi, partition_operations = self.partition(arr, low, high)
+            operations += partition_operations
+
+            operations += self.quicksort(arr, low, pi - 1)
+            operations += self.quicksort(arr, pi + 1, high)
+
+        return operations
+
+    def sort(self, data):
+        setrecursionlimit(50000)
+        operations = self.quicksort(data, 0, len(data) - 1)
+        return data, operations
+
+
+
+
 
 class MergeSort(SortAlgorithm):
     def __init__(self):

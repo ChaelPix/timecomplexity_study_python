@@ -77,22 +77,6 @@ class SelectionSort(SortAlgorithm):
             operations += 3
         return data, operations
 
-# class HeapSort(SortAlgorithm):
-#     def __init__(self):
-#         super().__init__('Heap Sort')
-
-#     def sort(self, data):
-#         operations = 0
-#         heapq.heapify(data)
-#         operations += len(data)  # ~ du coût de heapify (O(n))
-        
-#         sorted_data = []
-#         while data:
-#             sorted_data.append(heapq.heappop(data))
-#             operations += 1  # `heappop`, ~1 pour l'extraction.
-#             operations += len(data).bit_length()  # Comparaisons dans `heappop` (O(log n))
-        
-#         return sorted_data, operations
 class HeapSort(SortAlgorithm):
     def __init__(self):
         super().__init__('Heap Sort')
@@ -301,6 +285,20 @@ class SortBenchmark:
 
         return sizeArrays, listDataRandom, listDataSorted, listDataInvertedSorted
 
+    def remove_outliers_and_interpolate(self, data, threshold=2.0):
+        smoothed_data = np.copy(data)
+        
+        for i in range(data.shape[1]):
+            col = data[:, i]
+            median = np.median(col)
+            deviation = np.abs(col - median)
+            mad = np.median(deviation)
+            outliers = deviation > threshold * mad
+            
+            smoothed_data[outliers, i] = np.interp(np.flatnonzero(outliers), np.flatnonzero(~outliers), col[~outliers])
+        
+        return smoothed_data
+
     def execute_sort(self, algo):
         """
         Exécute l'algorithme sur plusieurs tailles de tableaux et calcule la moyenne sur n_runs.
@@ -360,6 +358,25 @@ class SortBenchmark:
                 operationsRandom, operationsSorted, operationsInverted,
                 memoryRandom, memorySorted, memoryInverted)
 
+    def smooth_memory_data(self, memory_data):
+        smoothed_data = np.copy(memory_data)
+
+        if memory_data[0] > memory_data[1]:
+            smoothed_data[0] = (memory_data[1] + memory_data[2]) / 2
+
+        if memory_data[1] > memory_data[0] and memory_data[1] > memory_data[2]:
+            smoothed_data[1] = (memory_data[0] + memory_data[2]) / 2
+
+        for i in range(1, len(memory_data) - 1):
+            if memory_data[i] > memory_data[i-1] and memory_data[i] > memory_data[i+1]:
+                #print("-1: ", memory_data[i-1], " i: ", memory_data[i], " +1: ", memory_data[i+1], "\n")
+                smoothed_data[i] = (memory_data[i-1] + memory_data[i+1]) / 2
+                #print("NEW : ", "-1: ", smoothed_data[i-1], " i: ", smoothed_data[i], " +1: ", smoothed_data[i+1], "\n")
+
+
+        return smoothed_data
+
+
     def run(self):
         avg_times = {algo.name: {'random': [], 'sorted': [], 'inverted': []} for algo in self.algorithms}
         avg_operations = {algo.name: {'random': [], 'sorted': [], 'inverted': []} for algo in self.algorithms}
@@ -392,11 +409,24 @@ class SortBenchmark:
         for algo_name in avg_times.keys():
             for list_type in avg_times[algo_name].keys():
                 if avg_times[algo_name][list_type]:
-                    avg_times[algo_name][list_type] = np.mean(avg_times[algo_name][list_type], axis=0)
+                    times_data = np.array(avg_times[algo_name][list_type])
+                    avg_times[algo_name][list_type] = np.mean(times_data, axis=0)
+                    avg_times[algo_name][list_type] = self.smooth_memory_data(avg_times[algo_name][list_type])
+
                 if avg_operations[algo_name][list_type]:
-                    avg_operations[algo_name][list_type] = np.mean(avg_operations[algo_name][list_type], axis=0)
+                    operations_data = np.array(avg_operations[algo_name][list_type])
+                    avg_operations[algo_name][list_type] = np.mean(operations_data, axis=0)
+                    avg_operations[algo_name][list_type] = self.smooth_memory_data(avg_operations[algo_name][list_type])
+
                 if avg_memory[algo_name][list_type]:
-                    avg_memory[algo_name][list_type] = np.mean(avg_memory[algo_name][list_type], axis=0)
+                    if avg_memory[algo_name][list_type]:
+                        memory_data = np.array(avg_memory[algo_name][list_type])
+                        avg_temp = np.min(memory_data, axis=0)
+                        avg_memory[algo_name][list_type] = self.smooth_memory_data(avg_temp)
+                    # memory_array = np.array(avg_memory[algo_name][list_type])
+                    # memory_array_smoothed = self.remove_outliers_and_interpolate(memory_array, threshold=2.0)
+                    # avg_memory[algo_name][list_type] = np.mean(memory_array_smoothed, axis=0)
+
 
         self.plot_results(avg_times, "moyenne_comparaison_time.png", 'Temps d\'exécution (s)')
         self.plot_results(avg_operations, "moyenne_comparaison_complexity.png", 'Nombre d\'opérations')
